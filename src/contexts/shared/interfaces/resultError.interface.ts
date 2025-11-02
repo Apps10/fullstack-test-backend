@@ -1,0 +1,1 @@
+export type ResultError = { kind: string, message:string }

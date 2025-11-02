@@ -1,0 +1,116 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Customer {
+  id              String       @default(uuid())   @id
+  name            String
+  email           String       @unique
+  address         String
+  phone           String
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  orders          Order[]    
+
+  @@index([email])       
+}
+
+
+model Product {
+  id              Int       @default(autoincrement())   @id
+  name            String
+  description     String
+  picture         String
+  price           Decimal
+  stock           Int
+  weightInGrams   Int
+}
+
+
+enum OrderStatus {
+  PENDING
+  PAID
+  DELIVERED
+  CANCELLED
+}
+
+
+model Order {
+  id              String        @default(uuid())    @id  
+  paidAt          DateTime?
+
+  customerId      String
+  customer        Customer     @relation(fields: [customerId], references: [id])
+  
+  status          OrderStatus   @default(PENDING)
+  totalAmount     Decimal       @db.Decimal(10,2)
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  transaction     Transaction[]
+  OrderItem       OrderItem[]
+
+
+  @@index([customerId])
+}
+
+
+model OrderItem {
+  id              String        @id @default(uuid())      
+  productId       Int
+  quantity        Int
+  unitPrice       Decimal       @db.Decimal(10,2)
+  lineTotal       Decimal       @db.Decimal(12,2)
+
+
+  orderId         String?
+  Order           Order?       @relation(fields: [orderId], references: [id])
+  @@index([productId])
+  @@index([orderId])
+}
+
+
+enum TransactionStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+model Transaction {
+  id              String        @id @default(uuid())      
+  payerName       String
+  payerTransactionId       String?   @unique
+
+  paymentStatus   TransactionStatus
+  totalAmount     Decimal       @db.Decimal(12,2)
+  metadata         Json?
+
+  order           Order        @relation(fields: [orderId], references: [id])
+  orderId         String       
+
+  paidAt          DateTime?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@index([orderId])
+  @@index([payerTransactionId])
+}
