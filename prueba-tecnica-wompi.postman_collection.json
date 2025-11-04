@@ -1,0 +1,132 @@
+{
+	"info": {
+		"_postman_id": "6af4dc38-41f4-45b0-8472-ad1e60e97626",
+		"name": "prueba-tecnica-wompi",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "15551704"
+	},
+	"item": [
+		{
+			"name": "inventory",
+			"item": [
+				{
+					"name": "find all",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/product",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"product"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Order",
+			"item": [
+				{
+					"name": "create",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"delivery\": {\r\n        \"name\": \"alfonso contreras vergara\",\r\n        \"email\": \"alfonso1@gmail.com\",\r\n        \"address\": \"cartagena, colombia barrio lomas lejos DG12 L21\",\r\n        \"phone\": \"+573502408993\"\r\n    },\r\n    \"orderItems\": [\r\n        {\r\n            \"productId\":2,\r\n            \"quantity\": 2,\r\n            \"price\":1000\r\n        }\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/order",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"order"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "checkout",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"transactionId\": \"65f22868-3205-4d98-829d-c14fc3c75c0a\",\r\n    \"customerId\": \"4059c5f5-d8ca-49d9-9a80-cf47d9c0a477\",\r\n    \"emailHolder\": \"pipinpon@gmail.com\",\r\n    \"creditCard\": \"eyJjYXJkTmFtZSI6IkFMRk9OU08gQ09OVFJFUkFTIiwiY2FyZE51bWJlciI6IjQyNDI0MjQyNDI0MjQyNDIiLCJjdnYiOiIxMjMiLCJleHBEYXRlIjoiMDMvMjcifQ\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/checkout",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"checkout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Transaction",
+			"item": [
+				{
+					"name": "find by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/transaction/5c2f26ab-5cee-48f3-8453-61bac21f3dea",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"transaction",
+								"5c2f26ab-5cee-48f3-8453-61bac21f3dea"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
