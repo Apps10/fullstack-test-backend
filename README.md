@@ -1,85 +1,162 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🧠 Prueba Técnica - Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Este proyecto corresponde al **backend** de una **prueba técnica** desarrollada con **NestJS**, aplicando **arquitectura hexagonal (ports & adapters)** y el paradigma **ROP (Railway Oriented Programming)**.  
+El sistema utiliza **PostgreSQL** como base de datos (corriendo en Docker) y no implementa autenticación, ya que los clientes se crean automáticamente al momento de generar una tarjeta de crédito.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 🚀 Tecnologías principales
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **NestJS** – Framework principal del backend.
+- **Prisma ORM** – Mapeo y acceso a base de datos.
+- **PostgreSQL** – Base de datos relacional.
+- **Docker** – Contenedor para la base de datos.
+- **Jest** – Pruebas unitarias.
+- **Result Object Pattern (ROP)** – Manejo explícito de errores y resultados.
+- **Arquitectura Hexagonal (Ports & Adapters)** – Separación de capas y responsabilidades.
 
-## Project setup
+---
 
-```bash
-$ npm install
+## 🧩 Estructura del proyecto
+
+```
+src/
+│
+├── modules/
+│   ├── credit-card/
+│   ├── transaction/
+│   └── customers/
+│   └── inventory/
+│   └── order/
+│   └── transaction/
+│
+├── shared/
+│   ├── dependency-injection/
+│   ├── models/
+│   └── utils/
+│ 
+└── main.ts
 ```
 
-## Compile and run the project
+Cada módulo sigue una estructura basada en **dominio**, **infraestructura**, y **aplicación (use cases)** para mantener el desacoplamiento.
 
-```bash
-# development
-$ npm run start
+---
 
-# watch mode
-$ npm run start:dev
+## 🐳 Configuración con Docker
 
-# production mode
-$ npm run start:prod
+El proyecto incluye un `docker-compose.yml` con PostgreSQL y Adminer.
+
+```yaml
+services:
+  db:
+    image: postgres:16.2
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=mydb
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
 ```
 
-## Run tests
-
+### Levantar la base de datos:
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+docker compose up -d
 ```
 
-## Resources
+### Acceder a Adminer:
+- URL: [http://localhost:8080](http://localhost:8080)
+- Server: `db`
+- User: `postgres`
+- Password: `123456`
+- Database: `mydb`
 
-Check out a few resources that may come in handy when working with NestJS:
+---
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## ⚙️ Instalación y ejecución
 
-## Support
+### 1️⃣ Clonar el repositorio
+```bash
+git clone git@github.com:Apps10/fullstack-test-backend.git
+cd backend
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### 2️⃣ Instalar dependencias
+```bash
+npm install
+```
 
-## Stay in touch
+### 3️⃣ Configurar las variables de entorno
+Crea un archivo `.env` en la raíz del proyecto con el siguiente contenido:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```env
+DATABASE_URL="postgresql://postgres:123456@localhost:5432/mydb"
+```
 
-## License
+### 4️⃣ Generar el cliente de Prisma
+```bash
+npx prisma generate
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### 5️⃣ Ejecutar las migraciones y cargar datos iniciales
+```bash
+npm run docker:start
+```
+
+Esto ejecutará:
+- `prisma migrate dev`
+- `npm run seed`
+- `npm run start`
+
+---
+
+## 🧪 Pruebas unitarias
+
+El proyecto incluye algunos tests unitarios con **Jest**.
+
+Ejecutar las pruebas:
+```bash
+npm run test
+```
+
+Ver cobertura:
+```bash
+npm run test:cov
+```
+
+---
+
+## 🧱 Principales características
+
+- Arquitectura **hexagonal**, separando dominio, aplicación e infraestructura.
+- Uso del **Railway Oriented Programming** para un flujo de errores más explícito y seguro.
+- Integración con **PostgreSQL** mediante **Prisma ORM**.
+- **Creación automática de clientes** al generar tarjetas de crédito.
+- Pruebas unitarias básicas para casos de uso críticos.
+
+---
+
+## 📁 Scripts útiles
+
+| Comando | Descripción |
+|----------|--------------|
+| `npm run start:dev` | Inicia el servidor en modo desarrollo |
+| `npm run seed` | Ejecuta el script de seed de datos |
+| `npm run docker:start` | Corre migraciones, seed y levanta el servidor |
+| `npm run test` | Ejecuta los tests unitarios |
+| `npm run test:cov` | Genera reporte de cobertura de tests |
+| `npm run format` | Formatea el código con Prettier |
+| `npm run lint` | Corrige problemas de estilo con ESLint |
+
+---
+
+## 🧠 Autor
+
+Desarrollado por **Alfonso Contreras**  
+Backend Developer – Prueba Técnica 2025  
