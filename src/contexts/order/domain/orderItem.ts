@@ -1,3 +1,5 @@
+import { Order } from "./order"
+
 export interface PrimitiveOrderItem {
   id?: string  
   productId: number,
@@ -21,7 +23,7 @@ export class OrderItem {
     lineTotal,
     productId,
     quantity
-  }: OrderItem) {
+  }: PrimitiveOrderItem) {
     this.id=id
     this.unitPrice=unitPrice
     this.lineTotal=lineTotal
@@ -38,6 +40,12 @@ export class OrderItem {
       quantity: this.quantity
     }
   }
+
+  static convertArrayPrimitiveToArrayInstances(orderItems: PrimitiveOrderItem[]): OrderItem[] {
+    return orderItems.map(oi=> new OrderItem({...oi}))
+  }
+
+
 
   
 }

@@ -13,17 +13,27 @@ import { CustomerModule } from '../../customers/infraestructure/customer.module'
 import { CustomerPrismaSchema } from '../../customers/infraestructure/customerSchema-prisma';
 import { TransactionModule } from '../../transactions/infraestructure/transaction.module';
 import { TransactionPrismaSchema } from '../../transactions/infraestructure/TransactionPrismaSchema';
+import { CheckOutController } from './api/checkout/checkout.controller';
+import { CheckoutUseCase } from '../application/checkout/checkout';
+import { PaymentService } from '../domain/paymentService';
+import { WompiPaymentService } from './service/wompi.payment.service';
 
 @Module({
   imports: [InventoryModel, CustomerModule, TransactionModule],
-  controllers: [CreateOrderController],
+  controllers: [CreateOrderController, CheckOutController],
   providers: [
     CreateOrderUseCase,
+    CheckoutUseCase,
     PrismaService,
     OrderSchemaPrisma,
+    WompiPaymentService,
     {
       provide: OrderRepository,
       useExisting: OrderSchemaPrisma,
+    },
+    {
+      provide: PaymentService,
+      useExisting: WompiPaymentService,
     },
     {
       provide: CreateOrderUseCase,
@@ -39,7 +49,30 @@ import { TransactionPrismaSchema } from '../../transactions/infraestructure/Tran
           customerRepo,
           transactionRepo,
         ),
-      inject: [OrderSchemaPrisma, InventorySchemaPrisma, CustomerPrismaSchema, TransactionPrismaSchema],
+      inject: [
+        OrderSchemaPrisma,
+        InventorySchemaPrisma,
+        CustomerPrismaSchema,
+        TransactionPrismaSchema,
+      ],
+    },
+    {
+      provide: CheckoutUseCase,
+      useFactory: (
+        orderRepo: OrderRepository,
+        transactionRepo: TransactionRepository,
+        paymentService: PaymentService,
+      ) =>
+        new CheckoutUseCase(
+          orderRepo,
+          transactionRepo,
+          paymentService
+        ),
+      inject: [
+        OrderSchemaPrisma,
+        TransactionPrismaSchema,
+        WompiPaymentService,
+      ],
     },
   ],
   exports: [],

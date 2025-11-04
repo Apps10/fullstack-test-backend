@@ -8,6 +8,8 @@ export interface PrimitiveOrder{
   customerId:     string
   status:         OrderStatus
 
+  baseFee:        number
+  taxFee:         number 
   totalAmount:    number
   orderItem:      PrimitiveOrderItem[]
   createdAt?:     Date,      
@@ -16,13 +18,15 @@ export interface PrimitiveOrder{
 
 
 export class Order {
-  private readonly id: string             
-  private readonly totalAmount: number
-  private readonly status: OrderStatus
-  private readonly paidAt: Date
-  private readonly orderItem: OrderItem[]
-  private readonly createdAt: Date      
-  private readonly updatedAt: Date   
+  public readonly id: string             
+  public readonly totalAmount: number
+  public readonly status: OrderStatus
+  public readonly baseFee: number
+  public readonly taxFee: number  
+  public readonly paidAt: Date
+  public readonly orderItem: OrderItem[]
+  public readonly createdAt: Date      
+  public readonly updatedAt: Date   
 
   constructor({
     id,
@@ -31,15 +35,19 @@ export class Order {
     paidAt,
     orderItem,
     createdAt,
-    updatedAt
-  }: Order){
+    updatedAt,
+    baseFee,
+    taxFee
+  }: PrimitiveOrder){
     this.id = id,
     this.totalAmount = totalAmount,
     this.status = status,
     this.paidAt = paidAt,
-    this.orderItem = orderItem,
+    this.orderItem = OrderItem.convertArrayPrimitiveToArrayInstances(orderItem),
     this.createdAt = createdAt,
     this.updatedAt = updatedAt
+    this.baseFee = baseFee
+    this.taxFee = taxFee
   }
 
   toApiJSON(){

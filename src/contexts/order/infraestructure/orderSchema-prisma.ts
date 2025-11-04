@@ -2,9 +2,10 @@ import { Logger, LoggerService } from '@nestjs/common';
 import { PrismaService } from '../../shared/services/prisma-client';
 import { Injectable } from '../../shared/dependency-injection/injectable';
 import { err, ok, Result } from '../../shared/models/result';
-import { OrderError } from '../domain/order.exception';
+import { OrderError, OrderGenericError, OrderNotFoundError } from '../domain/order.exception';
 import { OrderRepository } from '../domain/order.repository';
-import { PrimitiveOrder } from '../domain/order';
+import { Order, PrimitiveOrder } from '../domain/order';
+import { OrderStatus } from '../domain/orderStatus.enum';
 
 @Injectable()
 export class OrderSchemaPrisma implements OrderRepository {
@@ -14,9 +15,40 @@ export class OrderSchemaPrisma implements OrderRepository {
     this.loggerService = new Logger('OrderSchemaPrisma');
   }
 
+  async findById(id: string): Promise<Result<Order, OrderError>> {
+    try {
+      const order = await this.prisma.order.findUnique({
+        where: { id },
+        include: { OrderItem: true },
+      });
+
+      if (!order) {
+        return err(OrderNotFoundError());
+      }
+
+      return ok(
+        new Order({
+          ...order,
+          orderItem: order.OrderItem.map((oi) => ({
+            ...oi,
+            lineTotal: oi.lineTotal.toNumber(),
+            unitPrice: oi.unitPrice.toNumber(),
+          })),
+          status: order.status as OrderStatus,
+          totalAmount: order.totalAmount.toNumber(),
+          baseFee: order.baseFee.toNumber(),
+          taxFee: order.taxFee.toNumber()
+        }),
+      );
+    } catch (e) {
+      this.loggerService.error(e);
+    }
+  }
+
   async runInTransaction<T>(fn: (tx: any) => Promise<T>): Promise<T> {
-    return this.prisma.$transaction(fn, 
-      { timeout: 100000 } //TODO: eliminar, solo para debuggear
+    return this.prisma.$transaction(
+      fn,
+      { timeout: 100000 }, //TODO: eliminar, solo para debuggear
     );
   }
 
@@ -46,17 +78,14 @@ export class OrderSchemaPrisma implements OrderRepository {
     tx?: PrismaService,
   ): Promise<Result<{ orderId: string }, OrderError>> {
     const client = tx ?? this.prisma;
-    const { orderItem, customerId, id, totalAmount, status } = payload;
+    const { orderItem, ...res } = payload;
     try {
       const newOrder = await client.order.create({
         data: {
-          id,
-          totalAmount,
-          customerId,
-          status,
+          ...res,
           OrderItem: {
             createMany: {
-              data: orderItem,
+              data: [...orderItem],
             },
           },
         },
@@ -72,7 +101,7 @@ export class OrderSchemaPrisma implements OrderRepository {
       });
 
       if (newOrder) {
-        return ok({orderId: newOrder.id});
+        return ok({ orderId: newOrder.id });
       }
     } catch (e) {
       this.loggerService.error(e);
@@ -88,17 +117,13 @@ export class OrderSchemaPrisma implements OrderRepository {
     return Promise.resolve(ok(null));
   }
 
-  updateOrder(
-    updateOrderStatusDto: PrimitiveOrder,
-  ): Promise<Result<{ orderId: string }, OrderError>> {
-    // return this.prisma.order.update({
-    //   where: { id: orderId },
-    //   data: {
-    //     status,
-    //     totalAmount,
-    //     paidAt
-    //   },
-    // });
-    return Promise.resolve(ok({ orderId: '' }));
-  }
+  async updateOrderTx(orderId: string, updateOrderStatusDto: Partial<PrimitiveOrder>, tx?: PrismaService): Promise<Result<true, OrderError>> {
+    const client = tx ?? this.prisma
+    const { id, ...payload} =  updateOrderStatusDto
+    const order = await client.order.update({
+      where: { id: orderId },
+      data: payload,
+    });
+    return order ? ok(true): err(OrderGenericError(`Error Updating the order`));
+ }
 }

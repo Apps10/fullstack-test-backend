@@ -29,3 +29,12 @@ export const OrderAlreadyProcessedError = (
   message: messageError ?? 'The order already processed',
   statusCode: 400,
 });
+
+
+export const OrderGenericError = (
+  messageError?: string,
+): OrderError => ({
+  kind: 'order',
+  message: messageError ?? 'The order has an error',
+  statusCode: 400,
+});

@@ -3,7 +3,7 @@ import { Customer, PrimitiveCustomer } from './customer';
 import { CustomerError } from './customer.exceptions';
 
 export abstract class CustomerRepository {
-  abstract upsertByIdTx(
+  abstract upsertByIdOrEmailTx(
     id: string,
     user: PrimitiveCustomer,
     tx?,

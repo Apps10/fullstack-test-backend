@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import {
+  OrderAlreadyProcessedError,
   OrderError,
   OrderShouldHaveItemsError,
 } from '../../domain/order.exception';
@@ -12,10 +13,14 @@ import { Product } from '../../../inventory/domain/product';
 import { OrderStatus } from '../../domain/orderStatus.enum';
 import { CustomerRepository } from '../../../customers/domain/customer.repository';
 import { TransactionRepository } from '../../../transactions/domain/transaction.repository';
-import { TransactionStatus } from '../../../transactions/domain/transaction';
+import {
+  PrimitiveTransaction,
+  TransactionStatus,
+} from '../../../transactions/domain/transaction';
 
 export class CreateOrderUseCase {
   private logger: Logger = new Logger('CreateOrderUseCase');
+  private readonly IVA = 19;
   constructor(
     private readonly inventoryRepo: InventoryRepository,
     private readonly orderRepo: OrderRepository,
@@ -28,7 +33,16 @@ export class CreateOrderUseCase {
     orderId = uuidv4(),
     customerId = uuidv4(),
     delivery,
-  }: CreateOrderDto): Promise<Result<{ orderId: string }, OrderError>> {
+  }: CreateOrderDto): Promise<
+    Result<
+      {
+        orderId: string;
+        customerId: string;
+        transaction: Omit<PrimitiveTransaction, 'id' | 'paymentMethodId'>;
+      },
+      OrderError
+    >
+  > {
     if (!orderItems || orderItems.length === 0) {
       return err(OrderShouldHaveItemsError());
     }
@@ -54,10 +68,7 @@ export class CreateOrderUseCase {
     if (orderId) {
       const prev = await this.orderRepo.findByIdIfIsProccesed(orderId);
       if (prev.isOk && prev.value) {
-        return ok({
-          orderId: prev.value.id,
-          transactionId: prev.value.transactionId ?? '',
-        });
+        return err(OrderAlreadyProcessedError());
       }
     }
 
@@ -79,12 +90,12 @@ export class CreateOrderUseCase {
       return err(validateStock.error);
     }
 
-    let totalAmount = 0;
+    let baseFee = 0;
     const itemsToPersist = orderItems.map((it) => {
       const p = products.find((x) => x.id === it.productId);
       const productPrice = p.price;
       const lineTotal = productPrice * it.quantity;
-      totalAmount += lineTotal;
+      baseFee += lineTotal;
       return {
         productId: it.productId,
         quantity: it.quantity,
@@ -95,7 +106,7 @@ export class CreateOrderUseCase {
 
     try {
       const created = await this.orderRepo.runInTransaction(async (tx) => {
-        const upsertCust = await this.customerRepo.upsertByIdTx(
+        const upsertCust = await this.customerRepo.upsertByIdOrEmailTx(
           customerId,
           {
             ...delivery,
@@ -104,14 +115,17 @@ export class CreateOrderUseCase {
           tx,
         );
         if (upsertCust.isOk === false) throw upsertCust.error;
-
+        const taxFee = Math.round(baseFee * (this.IVA/100));
+        const totalAmount = Math.round((baseFee + taxFee) * 100) / 100;
         const createOrderRes = await this.orderRepo.createOrder(
           {
             customerId,
-            status: OrderStatus.CANCELLED,
+            status: OrderStatus.PENDING,
             totalAmount,
             id: orderId,
             orderItem: itemsToPersist,
+            baseFee,
+            taxFee
           },
           tx,
         );
@@ -123,11 +137,10 @@ export class CreateOrderUseCase {
           {
             orderId: createdOrder.orderId,
             totalAmount,
-            // baseFee: 0,
-            // deliveryFee: 0,
+            baseFee,
             payerName: delivery.name,
             paymentStatus: TransactionStatus.PENDING,
-
+            taxFee
             // metadata: { source: 'checkout' }
           },
           tx,
@@ -135,17 +148,18 @@ export class CreateOrderUseCase {
         if (txRes.isOk === false) throw txRes.error;
 
         const dec = await this.inventoryRepo.reserveStockTx(
-          itemsToPersist.map((i) => ({ quantity: i.quantity, id: i.quantity })),
+          itemsToPersist.map((i) => ({ quantity: i.quantity, id: i.productId })),
           tx,
         );
         if (dec.isOk === false) throw dec.error;
 
-        return { order: createdOrder, transaction: { id: txRes.value } };
+        return { order: createdOrder, transaction: txRes.value, customerId: upsertCust.value.id };
       });
 
       return ok({
         orderId: created.order.orderId,
-        transactionId: created.transaction.id,
+        customerId: created.customerId,
+        transaction: created.transaction,
       });
     } catch (e: any) {
       this.logger.error(e);

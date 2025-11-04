@@ -10,6 +10,7 @@ CREATE TABLE "Customer" (
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "address" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -33,9 +34,11 @@ CREATE TABLE "Product" (
 CREATE TABLE "Order" (
     "id" TEXT NOT NULL,
     "paidAt" TIMESTAMP(3),
-    "customerId" TEXT,
+    "baseFee" DECIMAL(10,2) NOT NULL,
+    "taxFee" DECIMAL(8,2) NOT NULL,
+    "totalAmount" DECIMAL(12,2) NOT NULL,
+    "customerId" TEXT NOT NULL,
     "status" "OrderStatus" NOT NULL DEFAULT 'PENDING',
-    "totalAmount" DECIMAL(10,2) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -58,16 +61,24 @@ CREATE TABLE "OrderItem" (
 CREATE TABLE "Transaction" (
     "id" TEXT NOT NULL,
     "payerName" TEXT NOT NULL,
-    "payerTransactionId" TEXT NOT NULL,
+    "payerTransactionId" TEXT,
+    "baseFee" DECIMAL(10,2) NOT NULL,
+    "taxFee" DECIMAL(8,2) NOT NULL,
+    "totalAmount" DECIMAL(12,2) NOT NULL,
     "paymentStatus" "TransactionStatus" NOT NULL,
+    "description" TEXT,
     "metadata" JSONB,
-    "orderId" TEXT,
+    "orderId" TEXT NOT NULL,
+    "paymentMethodId" TEXT,
     "paidAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Transaction_pkey" PRIMARY KEY ("id")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Customer_email_key" ON "Customer"("email");
 
 -- CreateIndex
 CREATE INDEX "Customer_email_idx" ON "Customer"("email");
@@ -91,10 +102,10 @@ CREATE INDEX "Transaction_orderId_idx" ON "Transaction"("orderId");
 CREATE INDEX "Transaction_payerTransactionId_idx" ON "Transaction"("payerTransactionId");
 
 -- AddForeignKey
-ALTER TABLE "Order" ADD CONSTRAINT "Order_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Order" ADD CONSTRAINT "Order_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

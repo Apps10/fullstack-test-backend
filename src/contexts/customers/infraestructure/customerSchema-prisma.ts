@@ -11,24 +11,34 @@ export class CustomerPrismaSchema implements CustomerRepository {
   private readonly logger = new Logger('CustomerPrismaSchema');
   constructor(private readonly prisma: PrismaService) {}
 
-  async upsertByIdTx(
+  async upsertByIdOrEmailTx(
     id: string,
     data: PrimitiveCustomer,
     tx?: PrismaService,
   ): Promise<Result<Customer, CustomerError>> {
     const client = tx ?? this.prisma;
     try {
-      const newCustomer = await client.customer.upsert({
-        where: { id },
-        create: {
-          ...data,
-          id,
-        },
-        update: {
-          ...data,
-          id
+      const existingCustomer = await client.customer.findFirst({
+        where: {
+          OR: [
+            { id },
+            { email: data.email },
+          ],
         },
       });
+      
+      let newCustomer;
+      if (existingCustomer) {
+        newCustomer = await client.customer.update({
+          where: { id: existingCustomer.id },
+          data,
+        });
+      } else {
+        newCustomer = await client.customer.create({
+          data: { ...data, id },
+        });
+      }
+
       return ok(new Customer({
         ...newCustomer,
       }));
